@@ -9,6 +9,60 @@ let weapons = [];
 let keys = {};
 let inCombat = false;
 let combatMonster = null;
+let currentEnvironment = 'town';
+
+const WORLD = {
+  width: 800,
+  height: 440,
+  gravity: 0.55,
+  jumpForce: 8.4,
+  moveSpeed: 2.4,
+  groundY: 380,
+  playerHeight: 30,
+  playerWidth: 18,
+};
+
+const PLATFORM_LEVELS = [
+  { x: 0, y: 390, w: 800, h: 50 },
+  { x: 120, y: 320, w: 110, h: 14 },
+  { x: 300, y: 275, w: 120, h: 14 },
+  { x: 500, y: 320, w: 120, h: 14 },
+  { x: 660, y: 270, w: 90, h: 14 },
+];
+
+// Environment-specific platform layouts
+const ENV_PLATFORMS = {
+  town: PLATFORM_LEVELS,
+  shop: [
+    { x: 0, y: 390, w: 800, h: 50 },
+    { x: 100, y: 340, w: 140, h: 12 },
+    { x: 300, y: 300, w: 100, h: 12 },
+    { x: 520, y: 330, w: 150, h: 12 },
+  ],
+  gamble: [
+    { x: 0, y: 390, w: 800, h: 50 },
+    { x: 180, y: 340, w: 120, h: 12 },
+    { x: 420, y: 300, w: 120, h: 12 },
+  ],
+  dungeon: [
+    { x: 0, y: 400, w: 800, h: 80 },
+    { x: 140, y: 350, w: 120, h: 12 },
+    { x: 360, y: 310, w: 100, h: 12 },
+    { x: 560, y: 340, w: 100, h: 12 },
+  ],
+  merchant: [
+    { x: 0, y: 390, w: 800, h: 50 },
+    { x: 220, y: 330, w: 140, h: 12 },
+    { x: 420, y: 300, w: 120, h: 12 },
+  ],
+  healer: [
+    { x: 0, y: 390, w: 800, h: 50 },
+    { x: 120, y: 330, w: 120, h: 12 },
+    { x: 320, y: 300, w: 140, h: 12 },
+  ],
+};
+
+let currentPlatforms = PLATFORM_LEVELS;
 
 const loginScreen = document.getElementById('login-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -27,6 +81,11 @@ function joinGame() {
 // --- SOCKET EVENTS ---
 socket.on('init', (data) => {
   self = data.self;
+  self.vy = 0;
+  self.onGround = true;
+  self.jumpLock = false;
+  self.x = Math.min(Math.max(self.x, 20), WORLD.width - 30);
+  self.y = Math.min(Math.max(self.y, 20), WORLD.groundY - WORLD.playerHeight);
   weapons = data.weapons;
   loginScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
@@ -46,7 +105,18 @@ socket.on('players', (list) => {
   document.getElementById('online-count').textContent = `👥 ${list.length} online`;
   updateGambleTargets();
 });
-
+function syncSelfHealthToPlayers() {
+  if (!self) return;
+  const me = players.find((p) => p.id === self.id);
+  if (me) {
+    me.x = self.x;
+    me.y = self.y;
+    me.hp = self.hp;
+    me.maxHp = self.maxHp;
+    me.color = self.color;
+    me.name = self.name;
+  }
+}
 socket.on('playerMoved', ({ id, x, y }) => {
   const p = players.find((pl) => pl.id === id);
   if (p) { p.x = x; p.y = y; }
@@ -57,11 +127,15 @@ socket.on('playerMoved', ({ id, x, y }) => {
 });
 
 socket.on('selfUpdate', (data) => {
-  self = data;
+  self = { ...self, ...data };
+  self.vy ??= 0;
+  self.onGround ??= true;
+  self.jumpLock ??= false;
   const index = players.findIndex((p) => p.id === self.id);
   if (index >= 0) {
     players[index] = { ...players[index], ...self };
   }
+  syncSelfHealthToPlayers();
   updateHUD();
   renderInventory();
 });
@@ -143,7 +217,7 @@ function updateHUD() {
   document.getElementById('player-gold').textContent = `💰 ${self.gold}g`;
   const w = weapons.find((wp) => wp.id === self.weapon);
   document.getElementById('player-weapon').textContent = w ? `🗡️ ${w.name}` : '🤜 Fists';
-  document.getElementById('player-stats').textContent = `⚔️ ${self.kills} kills · 🎲 ${self.wins}W/${self.losses}L`;
+  document.getElementById('player-stats').textContent = `⚔️ ${self.kills} kills · 🎲 ${self.wins}W/${self.losses}L · ${currentEnvironment?.toString().toUpperCase()}`;
 }
 
 // --- PANELS ---
@@ -163,6 +237,9 @@ document.querySelectorAll('.action-btn[data-action]').forEach((btn) => {
 
 function handleAction(action) {
   if (!self || self.inCombat) return;
+  currentEnvironment = action;
+  // switch platforms for this environment if defined
+  currentPlatforms = ENV_PLATFORMS[currentEnvironment] || PLATFORM_LEVELS;
   switch (action) {
     case 'dungeon':
       socket.emit('enterDungeon');
@@ -301,21 +378,68 @@ let lastMoveEmit = 0;
 
 function handleMovement() {
   if (!self || self.inCombat) return;
-  let dx = 0, dy = 0;
-  if (keys['w'] || keys['arrowup']) dy -= SPEED;
-  if (keys['s'] || keys['arrowdown']) dy += SPEED;
-  if (keys['a'] || keys['arrowleft']) dx -= SPEED;
-  if (keys['d'] || keys['arrowright']) dx += SPEED;
-  if (dx === 0 && dy === 0) return;
 
-  self.x = Math.max(20, Math.min(780, self.x + dx));
-  self.y = Math.max(20, Math.min(420, self.y + dy));
+  const left = keys['a'] || keys['arrowleft'];
+  const right = keys['d'] || keys['arrowright'];
+  const jump = keys['w'] || keys['arrowup'] || keys[' '];
 
-  const me = players.find((p) => p.id === self.id);
-  if (me) {
-    me.x = self.x;
-    me.y = self.y;
+  if (left && !right) {
+    self.x = Math.max(20, self.x - WORLD.moveSpeed);
   }
+  if (right && !left) {
+    self.x = Math.min(WORLD.width - 30, self.x + WORLD.moveSpeed);
+  }
+
+  if (jump && self.onGround && !self.jumpLock) {
+    self.vy = -WORLD.jumpForce;
+    self.onGround = false;
+    self.jumpLock = true;
+  }
+  if (!jump) {
+    self.jumpLock = false;
+  }
+
+  self.vy += WORLD.gravity;
+  self.y += self.vy;
+
+  let floorY = WORLD.groundY - WORLD.playerHeight;
+  let landed = false;
+  for (const platform of PLATFORM_LEVELS) {
+    const top = platform.y;
+    const bottom = platform.y + platform.h;
+    const playerTop = self.y;
+    const playerBottom = self.y + WORLD.playerHeight;
+    const playerMid = self.x + WORLD.playerWidth / 2;
+    const overlapsPlatform =
+      playerMid >= platform.x &&
+      playerMid <= platform.x + platform.w &&
+      playerBottom >= top &&
+      playerTop <= bottom &&
+      self.vy >= 0;
+
+    if (overlapsPlatform) {
+      self.y = top - WORLD.playerHeight;
+      self.vy = 0;
+      self.onGround = true;
+      landed = true;
+      break;
+    }
+  }
+
+  if (!landed) {
+    if (self.y >= floorY) {
+      self.y = floorY;
+      self.vy = 0;
+      self.onGround = true;
+    } else {
+      self.onGround = false;
+    }
+  }
+
+  self.x = Math.max(20, Math.min(WORLD.width - 30, self.x));
+  self.y = Math.max(20, Math.min(WORLD.height - 40, self.y));
+
+  syncSelfHealthToPlayers();
 
   const now = Date.now();
   if (now - lastMoveEmit > 50) {
@@ -334,11 +458,20 @@ function gameLoop() {
     Renderer.drawMonster(ctx, 500, 180, combatMonster.color, combatMonster.name, combatMonster.hp, combatMonster.maxHp);
     if (self) Renderer.drawPlayer(ctx, 200, 200, self.color, self.name, true);
   } else {
-    Renderer.drawHub(ctx, Renderer.BUILDINGS);
+    Renderer.drawHub(ctx, Renderer.BUILDINGS, currentPlatforms, currentEnvironment);
     const renderPlayers = players.filter((p) => p.id !== self?.id);
     if (self) renderPlayers.push(self);
     for (const p of renderPlayers) {
-      Renderer.drawPlayer(ctx, p.x, p.y, p.color, p.name, p.id === self?.id);
+      Renderer.drawPlayer(
+        ctx,
+        p.x,
+        p.y,
+        p.color,
+        p.name,
+        p.id === self?.id,
+        p.hp ?? 100,
+        p.maxHp ?? 100
+      );
     }
   }
 
@@ -357,6 +490,7 @@ canvas.addEventListener('click', (e) => {
   for (const b of Renderer.BUILDINGS) {
     if (mx >= b.x && mx <= b.x + b.w && my >= b.y - 16 && my <= b.y + b.h + 16) {
       const label = b.label;
+      currentEnvironment = label.toLowerCase();
       if (label === 'GAMBLE') handleAction('gamble');
       else if (label === 'SHOP') handleAction('shop');
       else if (label === 'DUNGEON') handleAction('dungeon');

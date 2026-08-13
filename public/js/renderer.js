@@ -7,7 +7,7 @@ const Renderer = (() => {
     ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
   }
 
-  function drawPlayer(ctx, x, y, color, name, isSelf) {
+  function drawPlayer(ctx, x, y, color, name, isSelf, hp = 100, maxHp = 100) {
     const px = Math.floor(x);
     const py = Math.floor(y);
 
@@ -37,6 +37,12 @@ const Renderer = (() => {
     ctx.font = '8px "Press Start 2P"';
     ctx.textAlign = 'center';
     ctx.fillText(name, px + 12, py - 4);
+
+    const barWidth = 26;
+    const barX = px + 1;
+    const barY = py + 32;
+    drawPixelRect(ctx, barX, barY, barWidth, 4, '#1a1a1a');
+    drawPixelRect(ctx, barX, barY, Math.max(0, barWidth * (hp / Math.max(1, maxHp))), 4, hp > 0 ? '#44cc66' : '#ff4444');
   }
 
   function drawBuilding(ctx, x, y, w, h, color, label) {
@@ -82,25 +88,53 @@ const Renderer = (() => {
     drawPixelRect(ctx, px, py + 44, barW * (hp / maxHp), 6, '#ff4444');
   }
 
-  function drawHub(ctx, buildings) {
+  function drawHub(ctx, buildings, platforms = [], environment = 'town') {
+    const sceneThemes = {
+      town: { skyTop: '#1a1a4e', skyBottom: '#2d4a3e', ground: '#3a6b35', path: '#8b7355', accent: '#e94560', decor: '#225522' },
+      shop: { skyTop: '#2a1d4a', skyBottom: '#3d2d5c', ground: '#4d6d54', path: '#a1805b', accent: '#7ce0d3', decor: '#335f47' },
+      gamble: { skyTop: '#3d1a1a', skyBottom: '#56322f', ground: '#5f4b36', path: '#b28853', accent: '#ffcc66', decor: '#7d4e2e' },
+      dungeon: { skyTop: '#120d1d', skyBottom: '#2c2433', ground: '#3f3a4b', path: '#7a6d7b', accent: '#ff5d73', decor: '#5e3d4b' },
+      merchant: { skyTop: '#17363c', skyBottom: '#205a5d', ground: '#3a6d59', path: '#8d7d5e', accent: '#86f0ff', decor: '#21524a' },
+      healer: { skyTop: '#132d2d', skyBottom: '#2a5042', ground: '#4b7f5a', path: '#7d9b76', accent: '#9dffad', decor: '#2f694a' },
+    };
+
+    const theme = sceneThemes[environment] || sceneThemes.town;
+
     // Sky gradient
     const grad = ctx.createLinearGradient(0, 0, 0, 440);
-    grad.addColorStop(0, '#1a1a4e');
-    grad.addColorStop(1, '#2d4a3e');
+    grad.addColorStop(0, theme.skyTop);
+    grad.addColorStop(1, theme.skyBottom);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 800, 440);
 
     // Ground tiles
     for (let tx = 0; tx < 800; tx += 16) {
       for (let ty = 300; ty < 440; ty += 16) {
-        const shade = ((tx + ty) / 16) % 2 === 0 ? '#3a6b35' : '#2d5530';
+        const shade = ((tx + ty) / 16) % 2 === 0 ? theme.ground : theme.ground.replace('3a6b35', '2d5530');
         drawPixelRect(ctx, tx, ty, 16, 16, shade);
+      }
+    }
+
+    for (const p of platforms) {
+      drawPixelRect(ctx, p.x, p.y, p.w, p.h, '#5b3a2a');
+      for (let x = p.x; x < p.x + p.w; x += 12) {
+        drawPixelRect(ctx, x, p.y, 6, 4, '#7d563d');
       }
     }
 
     // Path
     for (let px = 0; px < 800; px += 16) {
-      drawPixelRect(ctx, px, 340, 16, 16, '#8b7355');
+      drawPixelRect(ctx, px, 340, 16, 16, theme.path);
+    }
+
+    // Decor based on selected environment
+    const decor = [
+      [60, 360, theme.decor], [720, 370, theme.decor], [400, 380, '#555'],
+      [150, 365, theme.decor], [650, 355, theme.decor],
+    ];
+    for (const [dx, dy, c] of decor) {
+      drawPixelRect(ctx, dx, dy, 8, 16, '#4a3728');
+      drawPixelRect(ctx, dx - 4, dy - 8, 16, 12, c);
     }
 
     // Buildings

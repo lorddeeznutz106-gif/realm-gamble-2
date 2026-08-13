@@ -6,8 +6,8 @@
 
 body {
   background:
-    linear-gradient(180deg, #0b1020 0%, #16213e 35%, #1d3c5c 100%);
-  color: #eee;
+    radial-gradient(circle at top, #2d4a75 0%, #111b2f 26%, #0a1020 60%, #050910 100%);
+  color: #eef3ff;
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
   overflow: hidden;
@@ -32,9 +32,9 @@ body {
 .login-box {
   text-align: center;
   padding: 40px 38px 28px;
-  border: 4px solid #e94560;
-  background: rgba(22, 33, 62, 0.92);
-  box-shadow: 0 0 30px rgba(233, 69, 96, 0.3), 0 18px 0 rgba(11, 16, 32, 0.85);
+  border: 4px solid #f94144;
+  background: linear-gradient(180deg, rgba(25, 32, 56, 0.95), rgba(13, 17, 30, 0.93));
+  box-shadow: 0 0 30px rgba(249, 65, 68, 0.35), 0 18px 0 rgba(11, 16, 32, 0.85), inset 0 0 0 3px rgba(255,255,255,0.05);
   position: relative;
 }
 
@@ -120,9 +120,9 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 12px 18px;
-  background: rgba(10, 13, 28, 0.86);
-  border-bottom: 3px solid #533483;
-  box-shadow: 0 6px 0 rgba(83, 52, 131, 0.6);
+  background: linear-gradient(180deg, rgba(12, 19, 33, 0.97), rgba(17, 25, 42, 0.92));
+  border-bottom: 3px solid #a78bfa;
+  box-shadow: 0 6px 0 rgba(98, 77, 174, 0.6), inset 0 0 0 2px rgba(255,255,255,0.04);
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -141,19 +141,19 @@ body {
   display: flex;
   flex: 1;
   overflow: hidden;
-  padding: 10px 10px 12px;
+  padding: 12px 12px 14px;
 }
 
 #game-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  border: 4px solid #2b3f62;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 4px rgba(0,0,0,0.25), 0 12px 30px rgba(0,0,0,0.35);
+  border: 4px solid #3a4d74;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 4px rgba(0,0,0,0.25), 0 18px 28px rgba(0,0,0,0.3), 0 0 0 2px rgba(205,255,216,0.08);
   image-rendering: pixelated;
   cursor: crosshair;
-  background: #1f3d58;
+  background: linear-gradient(180deg, #1c355d, #17314d);
 }
 
 #sidebar {
@@ -172,10 +172,10 @@ body {
 
 .panel {
   padding: 12px 12px 10px;
-  border: 3px solid #6c5ce7;
-  border-radius: 12px;
-  background: rgba(15, 18, 35, 0.82);
-  box-shadow: 0 8px 0 rgba(20, 26, 39, 0.9), 0 0 18px rgba(108, 92, 231, 0.25);
+  border: 3px solid #8b7ae6;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(17, 22, 38, 0.94), rgba(20, 26, 40, 0.82));
+  box-shadow: 0 8px 0 rgba(13, 17, 30, 0.9), 0 0 22px rgba(139, 122, 230, 0.2);
   backdrop-filter: blur(2px);
 }
 
@@ -199,23 +199,20 @@ body {
   font-size: 8px;
   padding: 10px;
   margin-bottom: 6px;
-  background: linear-gradient(180deg, #5d4cb6 0%, #4739a0 100%);
+  background: linear-gradient(180deg, #6d5ef9 0%, #4d42be 100%);
   color: #fff;
-  border: 2px solid #8b79d9;
-  border-radius: 8px;
+  border: 2px solid #b3a6ff;
+  border-radius: 10px;
   cursor: pointer;
   text-align: left;
-  transition: transform 0.08s ease, filter 0.08s ease;
-  box-shadow: 0 4px 0 rgba(22, 16, 39, 0.8);
+  transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+  box-shadow: 0 4px 0 rgba(23, 16, 46, 0.8);
 }
 
 .action-btn:hover, .shop-item:hover, .inv-item:hover {
   transform: translateY(-1px);
   filter: brightness(1.08);
-}
-
-.action-btn:hover, .shop-item:hover, .inv-item:hover {
-  background: #7b5ea7;
+  box-shadow: 0 5px 0 rgba(23, 16, 46, 0.8);
 }
 
 .action-btn.danger {
@@ -322,19 +319,22 @@ select, #gamble-amount {
   font-family: inherit;
   font-size: 8px;
   padding: 8px;
-  background: #0f0f23;
-  border: 2px solid #533483;
+  background: linear-gradient(180deg, rgba(15, 21, 45, 1), rgba(9, 11, 23, 1));
+  border: 2px solid #8b7ae6;
   color: #fff;
+  border-radius: 8px;
 }
 
 #chat-send {
   font-family: inherit;
   font-size: 8px;
   padding: 8px 12px;
-  background: #e94560;
+  background: linear-gradient(180deg, #ff6b6b, #e94560);
   color: #fff;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
+  box-shadow: 0 4px 0 rgba(110, 18, 28, 0.9);
 }
 
 /* --- COMBAT --- */
@@ -363,11 +363,13 @@ select, #gamble-amount {
 }
 
 .toast {
-  background: #533483;
-  border: 2px solid #e94560;
+  background: linear-gradient(180deg, rgba(99, 88, 196, 0.96), rgba(57, 46, 125, 0.96));
+  border: 2px solid #ffd166;
+  border-radius: 10px;
   padding: 10px 20px;
   margin-top: 6px;
   font-size: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   animation: toastIn 0.3s, toastOut 0.3s 2.7s forwards;
 }
 
