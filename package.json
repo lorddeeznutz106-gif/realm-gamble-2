@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "push": "powershell -ExecutionPolicy Bypass -File .\\push-to-github.ps1"
   },
   "engines": {
     "node": ">=18"

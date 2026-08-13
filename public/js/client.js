@@ -37,7 +37,12 @@ socket.on('init', (data) => {
 });
 
 socket.on('players', (list) => {
-  players = list;
+  players = list.map((p) => {
+    if (self && p.id === self.id) {
+      return { ...p, x: self.x, y: self.y, hp: self.hp, gold: self.gold, weapon: self.weapon, inventory: self.inventory };
+    }
+    return p;
+  });
   document.getElementById('online-count').textContent = `👥 ${list.length} online`;
   updateGambleTargets();
 });
@@ -45,10 +50,18 @@ socket.on('players', (list) => {
 socket.on('playerMoved', ({ id, x, y }) => {
   const p = players.find((pl) => pl.id === id);
   if (p) { p.x = x; p.y = y; }
+  if (self && self.id === id) {
+    self.x = x;
+    self.y = y;
+  }
 });
 
 socket.on('selfUpdate', (data) => {
   self = data;
+  const index = players.findIndex((p) => p.id === self.id);
+  if (index >= 0) {
+    players[index] = { ...players[index], ...self };
+  }
   updateHUD();
   renderInventory();
 });
@@ -298,6 +311,12 @@ function handleMovement() {
   self.x = Math.max(20, Math.min(780, self.x + dx));
   self.y = Math.max(20, Math.min(420, self.y + dy));
 
+  const me = players.find((p) => p.id === self.id);
+  if (me) {
+    me.x = self.x;
+    me.y = self.y;
+  }
+
   const now = Date.now();
   if (now - lastMoveEmit > 50) {
     socket.emit('move', { x: self.x, y: self.y });
@@ -316,7 +335,9 @@ function gameLoop() {
     if (self) Renderer.drawPlayer(ctx, 200, 200, self.color, self.name, true);
   } else {
     Renderer.drawHub(ctx, Renderer.BUILDINGS);
-    for (const p of players) {
+    const renderPlayers = players.filter((p) => p.id !== self?.id);
+    if (self) renderPlayers.push(self);
+    for (const p of renderPlayers) {
       Renderer.drawPlayer(ctx, p.x, p.y, p.color, p.name, p.id === self?.id);
     }
   }

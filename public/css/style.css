@@ -5,12 +5,14 @@
 }
 
 body {
-  background: #1a1a2e;
+  background:
+    linear-gradient(180deg, #0b1020 0%, #16213e 35%, #1d3c5c 100%);
   color: #eee;
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
   overflow: hidden;
   image-rendering: pixelated;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.45);
 }
 
 .hidden { display: none !important; }
@@ -21,16 +23,34 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background:
+    linear-gradient(180deg, rgba(13,20,38,0.9), rgba(22,33,62,0.9)),
+    radial-gradient(circle at top, #3b6aa0 0%, transparent 45%),
+    linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
 }
 
 .login-box {
   text-align: center;
-  padding: 40px;
+  padding: 40px 38px 28px;
   border: 4px solid #e94560;
-  background: #16213e;
-  box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+  background: rgba(22, 33, 62, 0.92);
+  box-shadow: 0 0 30px rgba(233, 69, 96, 0.3), 0 18px 0 rgba(11, 16, 32, 0.85);
+  position: relative;
 }
+
+.login-box::before,
+.login-box::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  width: 24px;
+  height: 24px;
+  background: #f3d9a2;
+  border: 3px solid #6d4c41;
+}
+
+.login-box::before { left: 18px; }
+.login-box::after { right: 18px; }
 
 .login-box h1 {
   font-size: 24px;
@@ -91,14 +111,18 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  background: linear-gradient(180deg, #0d1220 0%, #1c2a42 20%, #304f63 100%);
 }
 
 #hud {
+  position: relative;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
-  padding: 10px 16px;
-  background: #0f0f23;
+  padding: 12px 18px;
+  background: rgba(10, 13, 28, 0.86);
   border-bottom: 3px solid #533483;
+  box-shadow: 0 6px 0 rgba(83, 52, 131, 0.6);
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -107,36 +131,52 @@ body {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-#player-name { color: #e94560; }
+#player-name { color: #ffd166; }
 
 #main-area {
+  position: relative;
   display: flex;
   flex: 1;
   overflow: hidden;
+  padding: 10px 10px 12px;
 }
 
 #game-canvas {
-  flex-shrink: 0;
-  border-right: 3px solid #533483;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 4px solid #2b3f62;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 4px rgba(0,0,0,0.25), 0 12px 30px rgba(0,0,0,0.35);
   image-rendering: pixelated;
   cursor: crosshair;
+  background: #1f3d58;
 }
 
 #sidebar {
-  flex: 1;
-  min-width: 260px;
-  max-width: 320px;
+  position: absolute;
+  right: 24px;
+  top: 72px;
+  width: min(290px, 32vw);
+  max-height: calc(100% - 90px);
   display: flex;
   flex-direction: column;
-  background: #16213e;
+  gap: 10px;
   overflow-y: auto;
+  z-index: 5;
+  padding-right: 4px;
 }
 
 .panel {
-  padding: 12px;
-  border-bottom: 2px solid #533483;
+  padding: 12px 12px 10px;
+  border: 3px solid #6c5ce7;
+  border-radius: 12px;
+  background: rgba(15, 18, 35, 0.82);
+  box-shadow: 0 8px 0 rgba(20, 26, 39, 0.9), 0 0 18px rgba(108, 92, 231, 0.25);
+  backdrop-filter: blur(2px);
 }
 
 .panel h3 {
@@ -159,12 +199,19 @@ body {
   font-size: 8px;
   padding: 10px;
   margin-bottom: 6px;
-  background: #533483;
+  background: linear-gradient(180deg, #5d4cb6 0%, #4739a0 100%);
   color: #fff;
-  border: 2px solid #7b5ea7;
+  border: 2px solid #8b79d9;
+  border-radius: 8px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.1s;
+  transition: transform 0.08s ease, filter 0.08s ease;
+  box-shadow: 0 4px 0 rgba(22, 16, 39, 0.8);
+}
+
+.action-btn:hover, .shop-item:hover, .inv-item:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
 }
 
 .action-btn:hover, .shop-item:hover, .inv-item:hover {
@@ -238,6 +285,16 @@ select, #gamble-amount {
   display: flex;
   flex-direction: column;
   min-height: 180px;
+}
+
+#panel-chat .chat-input-row,
+#panel-gamble select,
+#panel-gamble input,
+#panel-combat,
+#panel-merchant,
+#panel-shop {
+  position: relative;
+  z-index: 1;
 }
 
 #chat-messages {
@@ -329,7 +386,25 @@ select, #gamble-amount {
 ::-webkit-scrollbar-thumb { background: #533483; }
 
 @media (max-width: 900px) {
-  #main-area { flex-direction: column; }
-  #game-canvas { width: 100%; height: auto; border-right: none; border-bottom: 3px solid #533483; }
-  #sidebar { max-width: 100%; }
+  #main-area {
+    padding: 8px;
+  }
+
+  #game-canvas {
+    width: 100%;
+    height: auto;
+    border-right: 4px solid #2b3f62;
+    border-bottom: 4px solid #2b3f62;
+  }
+
+  #sidebar {
+    position: static;
+    width: 100%;
+    max-height: none;
+    margin-top: 10px;
+  }
+
+  #game-screen {
+    overflow-y: auto;
+  }
 }
