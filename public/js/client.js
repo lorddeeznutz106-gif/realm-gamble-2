@@ -89,6 +89,7 @@ socket.on('init', (data) => {
   weapons = data.weapons;
   loginScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
+  gameScreen.classList.toggle('room-mode', currentEnvironment !== 'town');
   updateHUD();
   renderShop();
   showPanel('actions');
@@ -96,13 +97,14 @@ socket.on('init', (data) => {
 });
 
 socket.on('players', (list) => {
-  players = list.map((p) => {
+  const roomList = list.filter((p) => p.environment === currentEnvironment || p.id === self?.id);
+  players = roomList.map((p) => {
     if (self && p.id === self.id) {
-      return { ...p, x: self.x, y: self.y, hp: self.hp, gold: self.gold, weapon: self.weapon, inventory: self.inventory };
+      return { ...p, x: self.x, y: self.y, hp: self.hp, gold: self.gold, weapon: self.weapon, inventory: self.inventory, environment: currentEnvironment };
     }
     return p;
   });
-  document.getElementById('online-count').textContent = `👥 ${list.length} online`;
+  document.getElementById('online-count').textContent = `👥 ${players.length} online`;
   updateGambleTargets();
 });
 function syncSelfHealthToPlayers() {
@@ -235,11 +237,23 @@ document.querySelectorAll('.action-btn[data-action]').forEach((btn) => {
   btn.addEventListener('click', () => handleAction(btn.dataset.action));
 });
 
+document.getElementById('exit-room-btn').addEventListener('click', () => {
+  if (!self) return;
+  currentEnvironment = 'town';
+  currentPlatforms = PLATFORM_LEVELS;
+  socket.emit('setEnvironment', 'town');
+  gameScreen.classList.remove('room-mode');
+  updateHUD();
+  showPanel('actions');
+});
+
 function handleAction(action) {
   if (!self || self.inCombat) return;
   currentEnvironment = action;
-  // switch platforms for this environment if defined
   currentPlatforms = ENV_PLATFORMS[currentEnvironment] || PLATFORM_LEVELS;
+  socket.emit('setEnvironment', currentEnvironment);
+  gameScreen.classList.toggle('room-mode', currentEnvironment !== 'town');
+  updateHUD();
   switch (action) {
     case 'dungeon':
       socket.emit('enterDungeon');
@@ -296,6 +310,42 @@ function renderInventory() {
 document.getElementById('sell-all-btn').addEventListener('click', () => socket.emit('sellAll'));
 
 // --- GAMBLE ---
+const SLOT_SYMBOLS = ['🍋', '🍒', '🍊', '⭐', '💰'];
+let slotSpinTimer = null;
+
+function startSlotSpinAnimation() {
+  const reelEls = [
+    document.getElementById('slot-reel-1'),
+    document.getElementById('slot-reel-2'),
+    document.getElementById('slot-reel-3'),
+  ];
+
+  const slotMachine = document.querySelector('.slot-machine');
+  if (slotMachine) slotMachine.classList.add('spinning');
+
+  if (slotSpinTimer) clearInterval(slotSpinTimer);
+
+  let tick = 0;
+  slotSpinTimer = setInterval(() => {
+    reelEls.forEach((el) => {
+      const currentIndex = SLOT_SYMBOLS.indexOf(el.textContent);
+      const nextIndex = (currentIndex >= 0 ? currentIndex + 1 : 0) % SLOT_SYMBOLS.length;
+      el.textContent = SLOT_SYMBOLS[nextIndex];
+      el.style.transform = 'translateY(-2px)';
+      el.style.transition = 'transform 0.08s ease';
+    });
+    tick += 1;
+    if (tick >= 14) {
+      clearInterval(slotSpinTimer);
+      slotSpinTimer = null;
+      reelEls.forEach((el) => {
+        el.style.transform = 'translateY(0)';
+      });
+      if (slotMachine) slotMachine.classList.remove('spinning');
+    }
+  }, 70);
+}
+
 function updateGambleTargets() {
   const sel = document.getElementById('gamble-target');
   sel.innerHTML = '';
@@ -312,11 +362,63 @@ function updateGambleTargets() {
   }
 }
 
+function renderSlotResult(reels, win, payout, bet) {
+  const reelEls = [
+    document.getElementById('slot-reel-1'),
+    document.getElementById('slot-reel-2'),
+    document.getElementById('slot-reel-3'),
+  ];
+
+  const slotMachine = document.querySelector('.slot-machine');
+  if (slotMachine) {
+    slotMachine.classList.toggle('win', win);
+    slotMachine.classList.remove('spinning');
+  }
+
+  let landedCount = 0;
+  const settle = setInterval(() => {
+    reelEls.forEach((el, index) => {
+      el.textContent = reels[index];
+      el.style.transform = 'translateY(-2px)';
+      el.style.transition = 'transform 0.09s ease';
+    });
+    landedCount += 1;
+    if (landedCount >= 3) {
+      clearInterval(settle);
+      reelEls.forEach((el) => {
+        el.style.transform = 'translateY(0)';
+      });
+    }
+  }, 80);
+
+  const resultText = document.getElementById('slot-result');
+  if (win) {
+    resultText.textContent = `JACKPOT! ${reels.join(' ')} — +${payout}g`;
+    resultText.style.color = '#8dff9d';
+  } else {
+    resultText.textContent = `No match — -${bet}g`;
+    resultText.style.color = '#ffd59a';
+  }
+}
+
+document.getElementById('slot-spin-btn').addEventListener('click', () => {
+  if (!self) return;
+  const bet = Math.max(10, Math.min(100, Number(document.getElementById('slot-bet').value) || 10));
+  document.getElementById('slot-bet').value = bet;
+  startSlotSpinAnimation();
+  socket.emit('slotMachine', { bet });
+});
+
 document.getElementById('gamble-send').addEventListener('click', () => {
   const targetId = document.getElementById('gamble-target').value;
   const amount = Number(document.getElementById('gamble-amount').value);
   if (!targetId || !amount) return;
   socket.emit('gambleOffer', { targetId, amount });
+});
+
+socket.on('slotResult', ({ reels, win, payout, bet }) => {
+  renderSlotResult(reels, win, payout, bet);
+  updateHUD();
 });
 
 // --- COMBAT UI ---
@@ -480,7 +582,7 @@ function gameLoop() {
 
 // --- BUILDING CLICK (walk near + click canvas) ---
 canvas.addEventListener('click', (e) => {
-  if (!self || self.inCombat) return;
+  if (!self || self.inCombat || currentEnvironment !== 'town') return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;

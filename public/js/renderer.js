@@ -90,74 +90,86 @@ const Renderer = (() => {
 
   function drawHub(ctx, buildings, platforms = [], environment = 'town') {
     const sceneThemes = {
-      town: { skyTop: '#1a1a4e', skyBottom: '#2d4a3e', ground: '#3a6b35', path: '#8b7355', accent: '#e94560', decor: '#225522' },
-      shop: { skyTop: '#2a1d4a', skyBottom: '#3d2d5c', ground: '#4d6d54', path: '#a1805b', accent: '#7ce0d3', decor: '#335f47' },
-      gamble: { skyTop: '#3d1a1a', skyBottom: '#56322f', ground: '#5f4b36', path: '#b28853', accent: '#ffcc66', decor: '#7d4e2e' },
-      dungeon: { skyTop: '#120d1d', skyBottom: '#2c2433', ground: '#3f3a4b', path: '#7a6d7b', accent: '#ff5d73', decor: '#5e3d4b' },
-      merchant: { skyTop: '#17363c', skyBottom: '#205a5d', ground: '#3a6d59', path: '#8d7d5e', accent: '#86f0ff', decor: '#21524a' },
-      healer: { skyTop: '#132d2d', skyBottom: '#2a5042', ground: '#4b7f5a', path: '#7d9b76', accent: '#9dffad', decor: '#2f694a' },
+      town: { bg: '#1d2d3d', floor: '#514a45', panel: '#2e3b4a', accent: '#e94560', glow: '#8fd3ff', title: 'Town Square' },
+      shop: { bg: '#2a1d4a', floor: '#4b4d5d', panel: '#43315d', accent: '#7ce0d3', glow: '#d9c27a', title: 'Armory' },
+      gamble: { bg: '#3d1b1b', floor: '#5d4334', panel: '#6d3a2d', accent: '#ffd76a', glow: '#ff9a55', title: 'Casino' },
+      dungeon: { bg: '#2b0d0a', floor: '#4f2f2a', panel: '#3d1a17', accent: '#ff5d73', glow: '#ff9686', title: 'Dungeon' },
+      merchant: { bg: '#18363a', floor: '#446a62', panel: '#264b4a', accent: '#86f0ff', glow: '#f7d58a', title: 'Market' },
+      healer: { bg: '#102d2c', floor: '#3f5f55', panel: '#21433b', accent: '#9dffad', glow: '#d7ffe8', title: 'Healer' },
     };
 
     const theme = sceneThemes[environment] || sceneThemes.town;
 
-    // Sky gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, 440);
-    grad.addColorStop(0, theme.skyTop);
-    grad.addColorStop(1, theme.skyBottom);
-    ctx.fillStyle = grad;
+    ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, 800, 440);
 
-    // Ground tiles
-    for (let tx = 0; tx < 800; tx += 16) {
-      for (let ty = 300; ty < 440; ty += 16) {
-        const shade = ((tx + ty) / 16) % 2 === 0 ? theme.ground : theme.ground.replace('3a6b35', '2d5530');
-        drawPixelRect(ctx, tx, ty, 16, 16, shade);
+    const roomBorder = 18;
+    ctx.fillStyle = theme.panel;
+    ctx.fillRect(roomBorder, roomBorder, 800 - roomBorder * 2, 440 - roomBorder * 2);
+
+    ctx.fillStyle = theme.floor;
+    ctx.fillRect(0, 300, 800, 140);
+
+    for (let x = 0; x < 800; x += 16) {
+      for (let y = 300; y < 440; y += 16) {
+        const dark = ((x + y) / 16) % 2 === 0 ? '#36312d' : '#4a403b';
+        drawPixelRect(ctx, x, y, 16, 16, dark);
       }
     }
 
     for (const p of platforms) {
-      drawPixelRect(ctx, p.x, p.y, p.w, p.h, '#5b3a2a');
-      for (let x = p.x; x < p.x + p.w; x += 12) {
-        drawPixelRect(ctx, x, p.y, 6, 4, '#7d563d');
+      drawPixelRect(ctx, p.x, p.y, p.w, p.h, '#51413b');
+      for (let x = p.x; x < p.x + p.w; x += 10) {
+        drawPixelRect(ctx, x, p.y, 5, 4, '#7a5f53');
       }
     }
 
-    // Path
-    for (let px = 0; px < 800; px += 16) {
-      drawPixelRect(ctx, px, 340, 16, 16, theme.path);
+    const roomGlow = theme.glow;
+    if (environment === 'dungeon') {
+      for (let x = 80; x <= 720; x += 120) {
+        drawPixelRect(ctx, x, 250, 18, 60, '#241411');
+        drawPixelRect(ctx, x + 4, 230, 10, 20, theme.accent);
+      }
+    }
+    if (environment === 'gamble') {
+      for (let x = 90; x <= 710; x += 110) {
+        drawPixelRect(ctx, x, 250, 42, 32, '#d7ac33');
+        drawPixelRect(ctx, x + 8, 230, 26, 18, '#f5d669');
+      }
+    }
+    if (environment === 'shop') {
+      for (let x = 110; x <= 690; x += 110) {
+        drawPixelRect(ctx, x, 250, 32, 62, '#4d3a72');
+        drawPixelRect(ctx, x + 8, 230, 16, 18, '#d9c27a');
+      }
+    }
+    if (environment === 'merchant') {
+      for (let x = 100; x <= 700; x += 120) {
+        drawPixelRect(ctx, x, 260, 48, 40, '#6a985d');
+        drawPixelRect(ctx, x + 12, 230, 22, 28, '#d5be74');
+      }
+    }
+    if (environment === 'healer') {
+      for (let x = 120; x <= 680; x += 120) {
+        drawPixelRect(ctx, x, 255, 36, 58, '#24513d');
+        drawPixelRect(ctx, x + 12, 235, 12, 18, '#dfffe8');
+      }
     }
 
-    // Decor based on selected environment
-    const decor = [
-      [60, 360, theme.decor], [720, 370, theme.decor], [400, 380, '#555'],
-      [150, 365, theme.decor], [650, 355, theme.decor],
-    ];
-    for (const [dx, dy, c] of decor) {
-      drawPixelRect(ctx, dx, dy, 8, 16, '#4a3728');
-      drawPixelRect(ctx, dx - 4, dy - 8, 16, 12, c);
-    }
-
-    // Buildings
-    for (const b of buildings) {
-      drawBuilding(ctx, b.x, b.y, b.w, b.h, b.color, b.label);
-    }
-
-    // Decorative pixels (trees, rocks)
-    const decor = [
-      [60, 360, '#225522'], [720, 370, '#225522'], [400, 380, '#555'],
-      [150, 365, '#334433'], [650, 355, '#334433'],
-    ];
-    for (const [dx, dy, c] of decor) {
-      drawPixelRect(ctx, dx, dy, 8, 16, '#4a3728');
-      drawPixelRect(ctx, dx - 4, dy - 8, 16, 12, c);
-    }
-
-    // Title sign
-    drawPixelRect(ctx, 310, 60, 180, 40, '#533483');
-    ctx.fillStyle = '#e94560';
+    ctx.fillStyle = theme.accent;
     ctx.font = '10px "Press Start 2P"';
     ctx.textAlign = 'center';
-    ctx.fillText('TOWN SQUARE', 400, 86);
+    ctx.fillText(`${theme.title.toUpperCase()}`, 400, 48);
+
+    ctx.strokeStyle = roomGlow;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 80, 720, 220);
+
+    if (environment === 'town') {
+      for (const b of buildings) {
+        drawBuilding(ctx, b.x, b.y, b.w, b.h, b.color, b.label);
+      }
+    }
   }
 
   function drawCombatArena(ctx) {

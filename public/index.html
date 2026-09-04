@@ -4,98 +4,77 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Realm Gamble — Pixel Multiplayer RPG</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tester.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="login-screen">
-    <div class="login-box">
-      <h1>REALM GAMBLE</h1>
-      <p class="subtitle">Fight · Gamble · Loot · Trade</p>
-      <input type="text" id="name-input" maxlength="16" placeholder="Enter hero name..." autofocus>
-      <button id="join-btn">ENTER REALM</button>
-      <div class="login-tips">
-        <p>WASD — move &nbsp;|&nbsp; Chat with players</p>
-        <p>Gamble gold · Buy weapons · Fight monsters · Sell loot</p>
-      </div>
-    </div>
-  </div>
-
-  <div id="game-screen" class="hidden">
-    <header id="hud">
-      <div class="hud-left">
-        <span id="player-name">Hero</span>
-        <span id="player-hp">HP 100/100</span>
-        <span id="player-gold">💰 50g</span>
-        <span id="player-weapon">🗡️ Fists</span>
-      </div>
-      <div class="hud-right">
-        <span id="player-stats">⚔️ 0 kills · 🎲 0W/0L</span>
-        <span id="online-count">👥 1 online</span>
-      </div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unisms Signal Desk</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">UNISMS <span>SIGNAL DESK</span></a>
+      <div class="status"><i></i><span id="mode-label">READY TO TEST</span></div>
     </header>
 
-    <div id="main-area">
-      <canvas id="game-canvas" width="800" height="440"></canvas>
+    <section class="intro">
+      <p class="eyebrow">SMS DELIVERY CONSOLE / 01</p>
+      <h1>Send a clean test.<br><em>Read the signal.</em></h1>
+      <p class="lede">A focused workspace for checking your Unisms connection across Philippine mobile networks.</p>
+    </section>
 
-      <aside id="sidebar">
-        <div class="panel" id="panel-actions">
-          <h3>⚔ ACTIONS</h3>
-          <button class="action-btn" data-action="dungeon">🏰 Enter Dungeon</button>
-          <button class="action-btn" data-action="shop">🛒 Weapon Shop</button>
-          <button class="action-btn" data-action="merchant">💎 Sell Loot</button>
-          <button class="action-btn" data-action="gamble">🎲 Gamble</button>
-          <button class="action-btn" data-action="heal">❤️ Heal (15g)</button>
-        </div>
-
-        <div class="panel hidden" id="panel-shop">
-          <h3>🛒 WEAPON SHOP</h3>
-          <div id="shop-list"></div>
-          <button class="back-btn" data-back="actions">← Back</button>
-        </div>
-
-        <div class="panel hidden" id="panel-merchant">
-          <h3>💎 MERCHANT</h3>
-          <div id="inventory-list"></div>
-          <button class="action-btn" id="sell-all-btn">Sell All Loot</button>
-          <button class="back-btn" data-back="actions">← Back</button>
-        </div>
-
-        <div class="panel hidden" id="panel-gamble">
-          <h3>🎲 GAMBLE</h3>
-          <p class="panel-desc">Challenge a player to a coin flip!</p>
-          <select id="gamble-target"></select>
-          <input type="number" id="gamble-amount" min="5" value="10" placeholder="Bet amount">
-          <button class="action-btn" id="gamble-send">Send Challenge</button>
-          <div id="gamble-invites"></div>
-          <button class="back-btn" data-back="actions">← Back</button>
-        </div>
-
-        <div class="panel hidden" id="panel-combat">
-          <h3>⚔ COMBAT</h3>
-          <div id="combat-info"></div>
-          <div id="combat-log"></div>
-          <button class="action-btn" id="attack-btn">⚔ ATTACK</button>
-          <button class="action-btn danger" id="flee-btn">🏃 Flee (-5g)</button>
-        </div>
-
-        <div class="panel" id="panel-chat">
-          <h3>💬 CHAT</h3>
-          <div id="chat-messages"></div>
-          <div class="chat-input-row">
-            <input type="text" id="chat-input" maxlength="120" placeholder="Say something...">
-            <button id="chat-send">Send</button>
+    <section class="workspace">
+      <form id="test-form" class="test-panel">
+        <div class="panel-heading"><span>01</span><h2>Message setup</h2></div>
+        <label>Network
+          <div class="network-picker">
+            <button type="button" class="network active" data-network="tnt"><b>TNT</b><small>Talk 'N Text</small></button>
+            <button type="button" class="network" data-network="smart"><b>SMART</b><small>Smart Communications</small></button>
           </div>
+        </label>
+        <div class="two-col">
+          <label>Recipient number
+            <input id="recipient" name="recipient" type="tel" placeholder="09XX XXX XXXX" autocomplete="tel" required>
+          </label>
+          <label>Sender ID <span class="optional">optional</span>
+            <input id="sender" name="sender" type="text" placeholder="Your sender" maxlength="20">
+          </label>
+        </div>
+        <label>Message <span id="counter" class="counter">0 / 480</span>
+          <textarea id="message" name="message" maxlength="480" rows="5" placeholder="Type a short test message..." required></textarea>
+        </label>
+        <button class="send-button" type="submit"><span>RUN API TEST</span><b>↗</b></button>
+        <p class="privacy">Your API key is used for this request only. It is never saved by this app.</p>
+      </form>
+
+      <aside class="side-column">
+        <div class="config-panel">
+          <div class="panel-heading"><span>02</span><h2>Connection</h2></div>
+          <label>Unisms API key
+            <input id="api-key" type="password" placeholder="Paste key for this test" autocomplete="off" required>
+          </label>
+          <label>API endpoint <span class="optional">optional</span>
+            <input id="endpoint" type="url" placeholder="Uses UNISMS_API_URL on server">
+          </label>
+          <label class="check-row"><input id="remember-endpoint" type="checkbox"> Keep endpoint in this browser</label>
+          <div class="hint"><b>Need a dry run?</b><br>Set <code>MOCK_UNISMS=true</code> on the server. The request will be validated but no SMS will be sent.</div>
+        </div>
+        <div id="result-panel" class="result-panel idle">
+          <div class="panel-heading"><span>03</span><h2>Last result</h2></div>
+          <div id="result-content"><strong>Waiting for a test</strong><p>Your API response will appear here.</p></div>
         </div>
       </aside>
-    </div>
-
-    <div id="toast-container"></div>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/renderer.js"></script>
-  <script src="/js/client.js"></script>
+    </section>
+    <section class="history-section"><div class="history-title"><h2>Recent checks</h2><button id="clear-history" type="button">Clear</button></div><div id="history" class="history-empty">No checks yet.</div></section>
+    <footer>UNISMS SIGNAL DESK <span>LOCAL API TOOL</span></footer>
+  </main>
+  <script src="/js/unisms-tester.js"></script>
 </body>
 </html>

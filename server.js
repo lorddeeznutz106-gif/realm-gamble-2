@@ -18,7 +18,79 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1e6 });
 
+app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/api/unisms/test', async (req, res) => {
+  const { apiKey, endpoint, network, recipient, sender, message } = req.body || {};
+  const cleanNetwork = String(network || '').toLowerCase();
+  const cleanRecipient = String(recipient || '').trim();
+  const cleanSender = String(sender || '').trim();
+  const cleanMessage = String(message || '').trim();
+
+  if (!['tnt', 'smart'].includes(cleanNetwork)) {
+    return res.status(400).json({ ok: false, error: 'Choose TNT or Smart.' });
+  }
+  if (!apiKey || !String(apiKey).trim()) {
+    return res.status(400).json({ ok: false, error: 'An Unisms API key is required.' });
+  }
+  if (!/^\+?[0-9]{10,15}$/.test(cleanRecipient.replace(/[\s-]/g, ''))) {
+    return res.status(400).json({ ok: false, error: 'Enter a valid recipient mobile number.' });
+  }
+  if (!cleanMessage || cleanMessage.length > 480) {
+    return res.status(400).json({ ok: false, error: 'Message must be between 1 and 480 characters.' });
+  }
+
+  const target = String(endpoint || process.env.UNISMS_API_URL || '').trim();
+  if (!target && process.env.MOCK_UNISMS !== 'true') {
+    return res.status(400).json({ ok: false, error: 'Set an Unisms API endpoint or enable MOCK_UNISMS=true.' });
+  }
+
+  const request = {
+    network: cleanNetwork,
+    to: cleanRecipient.replace(/[\s-]/g, ''),
+    from: cleanSender,
+    message: cleanMessage,
+  };
+
+  if (process.env.MOCK_UNISMS === 'true' || !target) {
+    return res.json({
+      ok: true,
+      mock: true,
+      message: 'Dry run complete. No SMS was sent.',
+      request: { ...request, apiKey: '[hidden]' },
+      testedAt: new Date().toISOString(),
+    });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(target, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${String(apiKey).trim()}`,
+        'X-API-Key': String(apiKey).trim(),
+      },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const text = await response.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 2000) }; }
+    return res.status(response.ok ? 200 : 502).json({
+      ok: response.ok,
+      status: response.status,
+      response: data,
+      message: response.ok ? 'Unisms accepted the request.' : 'Unisms rejected the request.',
+    });
+  } catch (error) {
+    const message = error.name === 'AbortError' ? 'Unisms request timed out.' : 'Could not reach the Unisms endpoint.';
+    return res.status(502).json({ ok: false, error: message });
+  }
+});
 
 const players = new Map();
 const pendingGambles = new Map();
@@ -43,6 +115,7 @@ function createPlayer(id, name) {
     inCombat: false,
     combatMonster: null,
     lastAttack: 0,
+    environment: 'town',
   };
 }
 
@@ -60,12 +133,23 @@ function publicPlayer(p) {
     kills: p.kills,
     wins: p.wins,
     inCombat: p.inCombat,
+    environment: p.environment,
   };
 }
 
+function emitPlayersForSocket(socket) {
+  const p = players.get(socket.id);
+  if (!p) return;
+  const roomPlayers = [...players.values()]
+    .filter((other) => other.environment === p.environment)
+    .map(publicPlayer);
+  socket.emit('players', roomPlayers);
+}
+
 function broadcastPlayers() {
-  const list = [...players.values()].map(publicPlayer);
-  io.emit('players', list);
+  for (const socket of io.sockets.sockets.values()) {
+    emitPlayersForSocket(socket);
+  }
 }
 
 function addToInventory(player, itemId, qty = 1) {
@@ -99,6 +183,17 @@ io.on('connection', (socket) => {
     });
     broadcastPlayers();
     systemMessage(`${player.name} entered the realm!`);
+  });
+
+  socket.on('setEnvironment', (environment) => {
+    const p = players.get(socket.id);
+    const valid = ['town', 'dungeon', 'shop', 'merchant', 'gamble', 'healer'];
+    if (!p || !valid.includes(environment)) return;
+    p.environment = environment;
+    p.x = 180 + Math.random() * 420;
+    p.y = 180 + Math.random() * 150;
+    socket.emit('selfUpdate', serializeSelf(p));
+    broadcastPlayers();
   });
 
   socket.on('move', ({ x, y }) => {
@@ -192,6 +287,56 @@ io.on('connection', (socket) => {
     }
     io.to(offer.challengerId).emit('selfUpdate', serializeSelf(challenger));
     io.to(offer.targetId).emit('selfUpdate', serializeSelf(target));
+    broadcastPlayers();
+  });
+
+  socket.on('slotMachine', ({ bet }) => {
+    const p = players.get(socket.id);
+    if (!p || p.inCombat) return;
+
+    const amount = Math.max(10, Math.min(100, Math.floor(Number(bet) || 10)));
+    if (amount < 10 || amount > 100) {
+      socket.emit('toast', 'Bet must be between 10g and 100g.');
+      return;
+    }
+    if (p.gold < amount) {
+      socket.emit('toast', 'Not enough gold for this slot bet.');
+      return;
+    }
+
+    const SLOT_SYMBOLS = [
+      { emoji: '🍋', weight: 120, multiplier: 1.5 },
+      { emoji: '🍒', weight: 80, multiplier: 2 },
+      { emoji: '🍊', weight: 45, multiplier: 2.5 },
+      { emoji: '⭐', weight: 20, multiplier: 4 },
+      { emoji: '💰', weight: 8, multiplier: 6 },
+    ];
+
+    const totalWeight = SLOT_SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
+    const pickWeightedSymbol = () => {
+      let roll = Math.random() * totalWeight;
+      for (const slot of SLOT_SYMBOLS) {
+        roll -= slot.weight;
+        if (roll <= 0) return slot.emoji;
+      }
+      return SLOT_SYMBOLS[SLOT_SYMBOLS.length - 1].emoji;
+    };
+
+    const reels = Array.from({ length: 3 }, () => pickWeightedSymbol());
+    const win = reels.every((symbol) => symbol === reels[0]);
+    
+    let payout = 0;
+    if (win) {
+      const winSymbol = SLOT_SYMBOLS.find(s => s.emoji === reels[0]);
+      payout = winSymbol ? Math.round(amount * winSymbol.multiplier) : amount;
+    }
+
+    p.gold -= amount;
+    if (win) p.gold += payout;
+
+    socket.emit('slotResult', { reels, win, payout, bet: amount });
+    socket.emit('selfUpdate', serializeSelf(p));
+    socket.emit('toast', win ? `JACKPOT! ${reels.join(' ')} won +${payout}g` : `No match — lost ${amount}g`);
     broadcastPlayers();
   });
 
@@ -385,6 +530,7 @@ function serializeSelf(p) {
     losses: p.losses,
     color: p.color,
     inCombat: p.inCombat,
+    environment: p.environment,
   };
 }
 

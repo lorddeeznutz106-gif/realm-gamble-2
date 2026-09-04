@@ -1,16 +1,6 @@
-# Realm Gamble
+# Unisms Signal Desk
 
-A pixel-art multiplayer RPG you can deploy on Railway's free tier. Gamble gold with other players, buy weapons, fight monsters, and sell loot.
-
-## Features
-
-- **Multiplayer hub** — See other players move around town in real time
-- **Chat** — Talk to everyone in the realm
-- **Gambling** — Challenge players to coin-flip bets
-- **Weapon shop** — Buy better gear to fight harder monsters
-- **Dungeon combat** — Battle slimes, goblins, skeletons, and dragons
-- **Loot & merchant** — Sell drops for gold, heal at the clinic
-- **Pixel graphics** — Lightweight canvas rendering, no heavy assets
+A small browser tool for testing Unisms SMS requests for TNT and Smart numbers. The original Realm Gamble game files remain in the repository, but the default page is now the SMS tester.
 
 ## Local Development
 
@@ -19,9 +9,29 @@ npm install
 npm start
 ```
 
-Open http://localhost:3000 in two browser tabs to test multiplayer.
+Open http://localhost:3000. The tester sends requests through `POST /api/unisms/test`, so the API key is not exposed to a third-party browser request.
 
-## Deploy to Railway (Free Tier)
+## Configuration
+
+Set the endpoint in the form, or configure it on the server:
+
+```powershell
+$env:UNISMS_API_URL = 'https://your-unisms-endpoint.example/sms'
+npm start
+```
+
+The live request includes the JSON fields `network`, `to`, `from`, and `message`, plus both `Authorization: Bearer <key>` and `X-API-Key: <key>` headers. Confirm the exact endpoint and payload names in your Unisms account documentation before sending live traffic.
+
+For validation without sending an SMS:
+
+```powershell
+$env:MOCK_UNISMS = 'true'
+npm start
+```
+
+The mock response confirms input validation and returns the sanitized request.
+
+## Deploy to Railway
 
 1. Push this repo to GitHub
 2. Go to [railway.app](https://railway.app) and create a new project
@@ -29,22 +39,4 @@ Open http://localhost:3000 in two browser tabs to test multiplayer.
 4. Railway auto-detects Node.js — no extra config needed
 5. Once deployed, open the generated URL and share it with friends!
 
-Railway sets `PORT` automatically. The app uses a single Node process with in-memory state (perfect for the free tier).
-
-## Controls
-
-| Key | Action |
-|-----|--------|
-| WASD / Arrows | Move |
-| Click buildings | Open shop, dungeon, gamble, etc. |
-| Sidebar buttons | All game actions |
-| Chat box | Talk to other players |
-
-## Tips
-
-- Start with 50 gold — gamble carefully!
-- Buy an Iron Sword before tackling skeletons
-- Sell loot at the merchant to fund better weapons
-- Mini Dragons drop Dragon Scales worth 100g each
-
-Have fun!
+Railway sets `PORT` automatically. Set `UNISMS_API_URL` as a Railway variable for live tests, or `MOCK_UNISMS=true` for a no-send deployment.
