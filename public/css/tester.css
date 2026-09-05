@@ -39,6 +39,10 @@ input:focus,textarea:focus { border-color:var(--teal); box-shadow:0 1px var(--te
 .send-button:hover { background:var(--teal); transform:translateY(-2px); }
 .send-button:disabled { transform:none; }
 .check-row input { accent-color:var(--teal); }
+.server-status { display:grid; grid-template-columns:10px 1fr; column-gap:10px; align-items:center; padding:3px 0 21px; }
+.server-status i { grid-row:span 2; width:8px; height:8px; border-radius:50%; background:#62ad46; box-shadow:0 0 0 4px rgba(98,173,70,.12); }
+.server-status strong { font-size:14px; }
+.server-status span { color:var(--muted); font:10px 'DM Mono',monospace; }
 .history-section { margin-top:52px; }
 
 @media (max-width:720px) {

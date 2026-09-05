@@ -1,6 +1,4 @@
 const form = document.getElementById('test-form');
-const apiKey = document.getElementById('api-key');
-const endpoint = document.getElementById('endpoint');
 const message = document.getElementById('message');
 const counter = document.getElementById('counter');
 const resultPanel = document.getElementById('result-panel');
@@ -9,7 +7,6 @@ const history = document.getElementById('history');
 const modeLabel = document.getElementById('mode-label');
 let network = 'tnt';
 
-endpoint.value = localStorage.getItem('unisms-endpoint') || '';
 message.addEventListener('input', () => { counter.textContent = `${message.value.length} / 480`; });
 
 document.querySelectorAll('.network').forEach((button) => {
@@ -18,11 +15,6 @@ document.querySelectorAll('.network').forEach((button) => {
     button.classList.add('active');
     network = button.dataset.network;
   });
-});
-
-document.getElementById('remember-endpoint').addEventListener('change', (event) => {
-  if (event.target.checked) localStorage.setItem('unisms-endpoint', endpoint.value.trim());
-  else localStorage.removeItem('unisms-endpoint');
 });
 
 function redact(value) {
@@ -50,7 +42,7 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const button = form.querySelector('.send-button');
   const request = {
-    apiKey: apiKey.value.trim(), endpoint: endpoint.value.trim(), network,
+    network,
     recipient: document.getElementById('recipient').value.trim(),
     sender: document.getElementById('sender').value.trim(), message: message.value.trim(),
   };

@@ -13,10 +13,11 @@ Open http://localhost:3000. The tester sends requests through `POST /api/unisms/
 
 ## Configuration
 
-Set the endpoint in the form, or configure it on the server:
+Configure the endpoint and API key on the server. They are never entered or stored in the browser:
 
 ```powershell
 $env:UNISMS_API_URL = 'https://your-unisms-endpoint.example/sms'
+$env:UNISMS_API_KEY = 'your-unisms-api-key'
 npm start
 ```
 

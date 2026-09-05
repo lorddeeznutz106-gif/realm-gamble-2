@@ -22,7 +22,8 @@ app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/unisms/test', async (req, res) => {
-  const { apiKey, endpoint, network, recipient, sender, message } = req.body || {};
+  const { network, recipient, sender, message } = req.body || {};
+  const apiKey = String(process.env.UNISMS_API_KEY || '').trim();
   const cleanNetwork = String(network || '').toLowerCase();
   const cleanRecipient = String(recipient || '').trim();
   const cleanSender = String(sender || '').trim();
@@ -31,9 +32,6 @@ app.post('/api/unisms/test', async (req, res) => {
   if (!['tnt', 'smart'].includes(cleanNetwork)) {
     return res.status(400).json({ ok: false, error: 'Choose TNT or Smart.' });
   }
-  if (!apiKey || !String(apiKey).trim()) {
-    return res.status(400).json({ ok: false, error: 'An Unisms API key is required.' });
-  }
   if (!/^\+?[0-9]{10,15}$/.test(cleanRecipient.replace(/[\s-]/g, ''))) {
     return res.status(400).json({ ok: false, error: 'Enter a valid recipient mobile number.' });
   }
@@ -41,7 +39,7 @@ app.post('/api/unisms/test', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Message must be between 1 and 480 characters.' });
   }
 
-  const target = String(endpoint || process.env.UNISMS_API_URL || '').trim();
+  const target = String(process.env.UNISMS_API_URL || '').trim();
   if (!target && process.env.MOCK_UNISMS !== 'true') {
     return res.status(400).json({ ok: false, error: 'Set an Unisms API endpoint or enable MOCK_UNISMS=true.' });
   }
@@ -61,6 +59,10 @@ app.post('/api/unisms/test', async (req, res) => {
       request: { ...request, apiKey: '[hidden]' },
       testedAt: new Date().toISOString(),
     });
+  }
+
+  if (!apiKey) {
+    return res.status(500).json({ ok: false, error: 'UNISMS_API_KEY is not configured on the server.' });
   }
 
   try {

@@ -40,19 +40,13 @@
           <textarea id="message" name="message" maxlength="480" rows="5" placeholder="Type a short test message..." required></textarea>
         </label>
         <button class="send-button" type="submit"><span>RUN API TEST</span><b>↗</b></button>
-        <p class="privacy">Your API key is used for this request only. It is never saved by this app.</p>
+        <p class="privacy">This console sends test details to the server. Credentials stay server-side.</p>
       </form>
 
       <aside class="side-column">
         <div class="config-panel">
           <div class="panel-heading"><span>02</span><h2>Connection</h2></div>
-          <label>Unisms API key
-            <input id="api-key" type="password" placeholder="Paste key for this test" autocomplete="off" required>
-          </label>
-          <label>API endpoint <span class="optional">optional</span>
-            <input id="endpoint" type="url" placeholder="Uses UNISMS_API_URL on server">
-          </label>
-          <label class="check-row"><input id="remember-endpoint" type="checkbox"> Keep endpoint in this browser</label>
+          <div class="server-status"><i></i><strong>Server connection</strong><span>Credentials configured privately</span></div>
           <div class="hint"><b>Need a dry run?</b><br>Set <code>MOCK_UNISMS=true</code> on the server. The request will be validated but no SMS will be sent.</div>
         </div>
         <div id="result-panel" class="result-panel idle">
