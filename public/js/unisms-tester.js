@@ -40,7 +40,7 @@ form.addEventListener('submit', async (event) => {
   button.querySelector('span').textContent = 'TESTING...';
   modeLabel.textContent = 'CONTACTING SMS8';
   try {
-    const response = await fetch('/api/unisms/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request) });
+    const response = await fetch('/api/sms8/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request) });
     const data = await response.json();
     showResult(data, request);
   } catch (error) {

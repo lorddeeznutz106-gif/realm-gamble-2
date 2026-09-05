@@ -21,9 +21,9 @@ const io = new Server(server, { maxHttpBufferSize: 1e6 });
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/api/unisms/test', async (req, res) => {
+app.post('/api/sms8/test', async (req, res) => {
   const { recipient, message } = req.body || {};
-  const apiKey = String(process.env.SMS8_API_KEY || process.env.UNISMS_API_KEY || '').trim();
+  const apiKey = String(process.env.SMS8_API_KEY || '').trim();
   const cleanRecipient = String(recipient || '').trim();
   const cleanMessage = String(message || '').trim();
 
@@ -35,8 +35,8 @@ app.post('/api/unisms/test', async (req, res) => {
   }
 
   const target = String(process.env.SMS8_API_URL || 'https://app.sms8.io/services/send.php').trim();
-  if (!target && process.env.MOCK_UNISMS !== 'true') {
-    return res.status(400).json({ ok: false, error: 'Set an SMS8 API endpoint or enable MOCK_UNISMS=true.' });
+  if (!target && process.env.MOCK_SMS8 !== 'true') {
+    return res.status(400).json({ ok: false, error: 'Set SMS8_API_URL or enable MOCK_SMS8=true.' });
   }
 
   const phoneDigits = cleanRecipient.replace(/[\s-]/g, '');
@@ -45,9 +45,14 @@ app.post('/api/unisms/test', async (req, res) => {
     : phoneDigits.startsWith('0')
       ? `+63${phoneDigits.slice(1)}`
       : `+${phoneDigits}`;
+  const deviceRoute = String(process.env.SMS8_DEVICE_ROUTE || '13347|0').trim();
+  if (deviceRoute && !/^\d+\|\d+$/.test(deviceRoute)) {
+    return res.status(500).json({ ok: false, error: 'SMS8_DEVICE_ROUTE must use deviceID|simSlot format, for example 13347|1.' });
+  }
   const request = { number: apiRecipient, message: cleanMessage };
+  if (deviceRoute) request.devices = deviceRoute;
 
-  if (process.env.MOCK_UNISMS === 'true' || !target) {
+  if (process.env.MOCK_SMS8 === 'true' || !target) {
     return res.json({
       ok: true,
       mock: true,
