@@ -46,7 +46,6 @@ app.post('/api/sms8/test', async (req, res) => {
       ? `+63${phoneDigits.slice(1)}`
       : `+${phoneDigits}`;
   const request = { number: apiRecipient, message: cleanMessage };
-    const request = { number: apiRecipient, message: cleanMessage };
 
   if (process.env.MOCK_SMS8 === 'true' || !target) {
     return res.json({
