@@ -26,7 +26,7 @@ app.post('/api/unisms/test', async (req, res) => {
   const apiKey = String(process.env.UNISMS_API_KEY || '').trim();
   const cleanNetwork = String(network || '').toLowerCase();
   const cleanRecipient = String(recipient || '').trim();
-  const cleanSender = String(sender || '').trim();
+  const cleanSender = String(sender || 'UniSMS').trim();
   const cleanMessage = String(message || '').trim();
 
   if (!['tnt', 'smart'].includes(cleanNetwork)) {
