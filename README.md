@@ -16,12 +16,12 @@ Open http://localhost:3000. The tester sends requests through `POST /api/unisms/
 Configure the endpoint and API key on the server. They are never entered or stored in the browser:
 
 ```powershell
-$env:UNISMS_API_URL = 'https://your-unisms-endpoint.example/sms'
+$env:UNISMS_API_URL = 'https://unismsapi.com/api/sms'
 $env:UNISMS_API_KEY = 'your-unisms-api-key'
 npm start
 ```
 
-The live request includes the JSON fields `network`, `to`, `from`, and `message`, plus both `Authorization: Bearer <key>` and `X-API-Key: <key>` headers. Confirm the exact endpoint and payload names in your Unisms account documentation before sending live traffic.
+The live request uses UniSMS Basic Authentication and sends `recipient`, `content`, and `sender_id`. Use an approved sender ID from your UniSMS account. Phone numbers are normalized to E.164 format for the API.
 
 For validation without sending an SMS:
 

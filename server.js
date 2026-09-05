@@ -44,11 +44,16 @@ app.post('/api/unisms/test', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Set an Unisms API endpoint or enable MOCK_UNISMS=true.' });
   }
 
+  const phoneDigits = cleanRecipient.replace(/[\s-]/g, '');
+  const apiRecipient = phoneDigits.startsWith('+')
+    ? phoneDigits
+    : phoneDigits.startsWith('0')
+      ? `+63${phoneDigits.slice(1)}`
+      : `+${phoneDigits}`;
   const request = {
-    network: cleanNetwork,
-    to: cleanRecipient.replace(/[\s-]/g, ''),
-    from: cleanSender,
-    message: cleanMessage,
+    recipient: apiRecipient,
+    content: cleanMessage,
+    sender_id: cleanSender,
   };
 
   if (process.env.MOCK_UNISMS === 'true' || !target) {
@@ -72,8 +77,8 @@ app.post('/api/unisms/test', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${String(apiKey).trim()}`,
-        'X-API-Key': String(apiKey).trim(),
+        Accept: 'application/json',
+        Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`,
       },
       body: JSON.stringify(request),
       signal: controller.signal,
