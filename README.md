@@ -16,13 +16,12 @@
  ```powershell
  npm install
  $env:SMS8_API_KEY = 'your-new-sms8-api-key'
- $env:SMS8_DEVICE_ROUTE = '13347|0'
  npm.cmd start
  ```
  
  Open `http://localhost:3000`.
  
- `13347|0` means device `13347`, SIM 1. SMS8 uses zero-based SIM slots, so SIM 2 would be `13347|1`.
+The app does not force a device or SIM. SMS8 chooses the active default sender from the paired account.
  
  ## 3. Railway setup
  
@@ -33,7 +32,6 @@
  
  ```env
  SMS8_API_KEY=your-new-sms8-api-key
- SMS8_DEVICE_ROUTE=13347|0
  ```
  
  5. Save the variables and redeploy.
@@ -60,7 +58,6 @@
  key=...
  number=+639171234567
  message=...
- devices=13347|0
  ```
  
  The app reports success when SMS8 returns `success: true`. That means SMS8 accepted the request; it does not guarantee carrier delivery.
@@ -68,7 +65,7 @@
  ## 5. Troubleshooting
  
  - If Railway reports a missing key, check that `SMS8_API_KEY` is saved and redeploy.
- - If the wrong SIM sends, verify `SMS8_DEVICE_ROUTE`. SIM 1 is slot `0`; SIM 2 is slot `1`.
+- SMS8 chooses the active default device and SIM; verify that the paired phone is online in SMS8.
  - If SMS8 says sent but no phone receives the message, check that the paired phone is online, has signal, has SMS permission, and can send a normal SMS manually.
  - Test from the SMS8 dashboard directly. If that also fails, the issue is the phone, SIM, carrier, or SMS8 account rather than this app.
  - Use a different recipient number to distinguish recipient filtering from sender-device problems.
@@ -79,4 +76,4 @@
  npm.cmd start
  ```
  
- The browser calls `POST /api/sms8/test`. The server validates the input, adds the configured device/SIM route, and forwards the request to SMS8.
+The browser calls `POST /api/sms8/test`. The server validates the input and forwards the request to SMS8.

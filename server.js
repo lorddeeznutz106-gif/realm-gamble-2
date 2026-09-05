@@ -45,12 +45,8 @@ app.post('/api/sms8/test', async (req, res) => {
     : phoneDigits.startsWith('0')
       ? `+63${phoneDigits.slice(1)}`
       : `+${phoneDigits}`;
-  const deviceRoute = String(process.env.SMS8_DEVICE_ROUTE || '13347|0').trim();
-  if (deviceRoute && !/^\d+\|\d+$/.test(deviceRoute)) {
-    return res.status(500).json({ ok: false, error: 'SMS8_DEVICE_ROUTE must use deviceID|simSlot format, for example 13347|1.' });
-  }
   const request = { number: apiRecipient, message: cleanMessage };
-  if (deviceRoute) request.devices = deviceRoute;
+    const request = { number: apiRecipient, message: cleanMessage };
 
   if (process.env.MOCK_SMS8 === 'true' || !target) {
     return res.json({
