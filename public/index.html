@@ -3,50 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Unisms Signal Desk</title>
+  <title>SMS8 Signal Desk</title>
   <link rel="stylesheet" href="/css/tester.css">
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="/">UNISMS <span>SIGNAL DESK</span></a>
+      <a class="brand" href="/">SMS8 <span>SIGNAL DESK</span></a>
       <div class="status"><i></i><span id="mode-label">READY TO TEST</span></div>
     </header>
 
     <section class="intro">
-      <p class="eyebrow">SMS DELIVERY CONSOLE / 01</p>
-      <h1>Send a clean test.<br><em>Read the signal.</em></h1>
-      <p class="lede">A focused workspace for checking your Unisms connection across Philippine mobile networks.</p>
+      <p class="eyebrow">SMS8 API TEST CONSOLE / 01</p>
+      <h1>Send one clean test.<br><em>Check the signal.</em></h1>
+      <p class="lede">A focused test workspace for sending one SMS through your default SMS8 device and SIM.</p>
     </section>
 
     <section class="workspace">
       <form id="test-form" class="test-panel">
         <div class="panel-heading"><span>01</span><h2>Message setup</h2></div>
-        <label>Network
-          <div class="network-picker">
-            <button type="button" class="network active" data-network="tnt"><b>TNT</b><small>Talk 'N Text</small></button>
-            <button type="button" class="network" data-network="smart"><b>SMART</b><small>Smart Communications</small></button>
-          </div>
+        <label>Recipient number
+          <input id="recipient" name="recipient" type="tel" placeholder="09XX XXX XXXX" autocomplete="tel" required>
         </label>
-        <div class="two-col">
-          <label>Recipient number
-            <input id="recipient" name="recipient" type="tel" placeholder="09XX XXX XXXX" autocomplete="tel" required>
-          </label>
-          <label>Sender ID
-            <input id="sender" name="sender" type="text" placeholder="Your approved sender ID" maxlength="20" required>
-          </label>
-        </div>
         <label>Message <span id="counter" class="counter">0 / 480</span>
           <textarea id="message" name="message" maxlength="480" rows="5" placeholder="Type a short test message..." required></textarea>
         </label>
         <button class="send-button" type="submit"><span>RUN API TEST</span><b>↗</b></button>
-        <p class="privacy">This console sends test details to the server. Credentials stay server-side.</p>
+        <p class="privacy">SMS8 selects the default paired device and SIM. Your API key stays server-side.</p>
       </form>
 
       <aside class="side-column">
         <div class="config-panel">
           <div class="panel-heading"><span>02</span><h2>Connection</h2></div>
-          <div class="server-status"><i></i><strong>Server connection</strong><span>Credentials configured privately</span></div>
+          <div class="server-status"><i></i><strong>SMS8 API connection</strong><span>Default device and SIM sender</span></div>
           <div class="hint"><b>Need a dry run?</b><br>Set <code>MOCK_UNISMS=true</code> on the server. The request will be validated but no SMS will be sent.</div>
         </div>
         <div id="result-panel" class="result-panel idle">
@@ -56,7 +45,7 @@
       </aside>
     </section>
     <section class="history-section"><div class="history-title"><h2>Recent checks</h2><button id="clear-history" type="button">Clear</button></div><div id="history" class="history-empty">No checks yet.</div></section>
-    <footer>UNISMS SIGNAL DESK <span>LOCAL API TOOL</span></footer>
+    <footer>SMS8 SIGNAL DESK <span>LOCAL API TOOL</span></footer>
   </main>
   <script src="/js/unisms-tester.js"></script>
 </body>

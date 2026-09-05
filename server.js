@@ -22,16 +22,11 @@ app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/unisms/test', async (req, res) => {
-  const { network, recipient, sender, message } = req.body || {};
-  const apiKey = String(process.env.UNISMS_API_KEY || '').trim();
-  const cleanNetwork = String(network || '').toLowerCase();
+  const { recipient, message } = req.body || {};
+  const apiKey = String(process.env.SMS8_API_KEY || process.env.UNISMS_API_KEY || '').trim();
   const cleanRecipient = String(recipient || '').trim();
-  const cleanSender = String(sender || '').trim();
   const cleanMessage = String(message || '').trim();
 
-  if (!['tnt', 'smart'].includes(cleanNetwork)) {
-    return res.status(400).json({ ok: false, error: 'Choose TNT or Smart.' });
-  }
   if (!/^\+?[0-9]{10,15}$/.test(cleanRecipient.replace(/[\s-]/g, ''))) {
     return res.status(400).json({ ok: false, error: 'Enter a valid recipient mobile number.' });
   }
@@ -39,9 +34,9 @@ app.post('/api/unisms/test', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Message must be between 1 and 480 characters.' });
   }
 
-  const target = String(process.env.UNISMS_API_URL || '').trim();
+  const target = String(process.env.SMS8_API_URL || 'https://app.sms8.io/services/send.php').trim();
   if (!target && process.env.MOCK_UNISMS !== 'true') {
-    return res.status(400).json({ ok: false, error: 'Set an Unisms API endpoint or enable MOCK_UNISMS=true.' });
+    return res.status(400).json({ ok: false, error: 'Set an SMS8 API endpoint or enable MOCK_UNISMS=true.' });
   }
 
   const phoneDigits = cleanRecipient.replace(/[\s-]/g, '');
@@ -50,11 +45,7 @@ app.post('/api/unisms/test', async (req, res) => {
     : phoneDigits.startsWith('0')
       ? `+63${phoneDigits.slice(1)}`
       : `+${phoneDigits}`;
-  const request = {
-    recipient: apiRecipient,
-    content: cleanMessage,
-    sender_id: cleanSender,
-  };
+  const request = { number: apiRecipient, message: cleanMessage };
 
   if (process.env.MOCK_UNISMS === 'true' || !target) {
     return res.json({
@@ -67,34 +58,35 @@ app.post('/api/unisms/test', async (req, res) => {
   }
 
   if (!apiKey) {
-    return res.status(500).json({ ok: false, error: 'UNISMS_API_KEY is not configured on the server.' });
+    return res.status(500).json({ ok: false, error: 'SMS8_API_KEY is not configured on the server.' });
   }
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
+    const body = new URLSearchParams({ key: apiKey, ...request });
     const response = await fetch(target, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'application/json',
-        Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`,
       },
-      body: JSON.stringify(request),
+      body,
       signal: controller.signal,
     });
     clearTimeout(timeout);
     const text = await response.text();
     let data;
     try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 2000) }; }
-    return res.status(response.ok ? 200 : 502).json({
-      ok: response.ok,
+    const accepted = response.ok && data?.success === true;
+    return res.status(accepted ? 200 : 502).json({
+      ok: accepted,
       status: response.status,
       response: data,
-      message: response.ok ? 'Unisms accepted the request.' : 'Unisms rejected the request.',
+      message: accepted ? 'SMS8 accepted the request.' : data?.error?.message || 'SMS8 rejected the request.',
     });
   } catch (error) {
-    const message = error.name === 'AbortError' ? 'Unisms request timed out.' : 'Could not reach the Unisms endpoint.';
+    const message = error.name === 'AbortError' ? 'SMS8 request timed out.' : 'Could not reach the SMS8 endpoint.';
     return res.status(502).json({ ok: false, error: message });
   }
 });
