@@ -12,6 +12,7 @@ const {
   pickRandomMonster,
   rollLoot,
 } = require('./game/data');
+const { sendBroadcast } = require('./itexmo-app/client');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -42,56 +43,20 @@ app.post('/api/unisms/test', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Message must be between 1 and 480 characters.' });
   }
 
-  const target = 'https://api.itexmo.com/api/broadcast';
   if (process.env.MOCK_ITEXMO !== 'true' && (!apiCode || !clientId || !email || !password)) {
     return res.status(400).json({ ok: false, error: 'Configure ITEXMO_API_CODE, ITEXMO_CLIENT_ID, ITEXMO_EMAIL, and ITEXMO_PASSWORD on the server.' });
   }
 
   const phoneDigits = cleanRecipient.replace(/[\s-]/g, '');
-  const request = {
-    ApiCode: apiCode,
-    ClientId: clientId,
-    Recipients: [phoneDigits],
-    Message: cleanMessage,
-    Email: email,
-    Password: password,
-  };
-  if (cleanSender) {
-    request.SenderId = cleanSender;
-  }
-
-  if (process.env.MOCK_ITEXMO === 'true') {
-    return res.json({
-      ok: true,
-      mock: true,
-      message: 'Dry run complete. No SMS was sent.',
-      request: { ...request, Password: '[hidden]' },
-      testedAt: new Date().toISOString(),
-    });
-  }
-
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(target, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(request),
-      signal: controller.signal,
+    const result = await sendBroadcast({
+      credentials: { apiCode, clientId, email, password },
+      recipient: phoneDigits,
+      message: cleanMessage,
+      sender: cleanSender,
+      mock: process.env.MOCK_ITEXMO === 'true',
     });
-    clearTimeout(timeout);
-    const text = await response.text();
-    let data;
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 2000) }; }
-    return res.status(response.ok ? 200 : 502).json({
-      ok: response.ok,
-      status: response.status,
-      response: data,
-      message: response.ok ? 'Unisms accepted the request.' : 'Unisms rejected the request.',
-    });
+    return res.status(result.ok ? 200 : 502).json(result);
   } catch (error) {
     const message = error.name === 'AbortError' ? 'iTexMo request timed out.' : 'Could not reach the iTexMo API.';
     return res.status(502).json({ ok: false, error: message });
