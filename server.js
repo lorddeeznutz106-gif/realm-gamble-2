@@ -12,7 +12,6 @@ const {
   pickRandomMonster,
   rollLoot,
 } = require('./game/data');
-const { sendBroadcast } = require('./itexmo-app/client');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -24,10 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/unisms/test', async (req, res) => {
   const { network, recipient, sender, message } = req.body || {};
-  const apiCode = String(process.env.ITEXMO_API_CODE || '').trim();
-  const clientId = String(process.env.ITEXMO_CLIENT_ID || '').trim();
-  const email = String(process.env.ITEXMO_EMAIL || '').trim();
-  const password = String(process.env.ITEXMO_PASSWORD || '').trim();
+  const apiKey = String(process.env.UNISMS_API_KEY || '').trim();
   const cleanNetwork = String(network || '').toLowerCase();
   const cleanRecipient = String(recipient || '').trim();
   const cleanSender = String(sender || '').trim();
@@ -43,22 +39,62 @@ app.post('/api/unisms/test', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Message must be between 1 and 480 characters.' });
   }
 
-  if (process.env.MOCK_ITEXMO !== 'true' && (!apiCode || !clientId || !email || !password)) {
-    return res.status(400).json({ ok: false, error: 'Configure ITEXMO_API_CODE, ITEXMO_CLIENT_ID, ITEXMO_EMAIL, and ITEXMO_PASSWORD on the server.' });
+  const target = String(process.env.UNISMS_API_URL || '').trim();
+  if (!target && process.env.MOCK_UNISMS !== 'true') {
+    return res.status(400).json({ ok: false, error: 'Set an Unisms API endpoint or enable MOCK_UNISMS=true.' });
   }
 
   const phoneDigits = cleanRecipient.replace(/[\s-]/g, '');
-  try {
-    const result = await sendBroadcast({
-      credentials: { apiCode, clientId, email, password },
-      recipient: phoneDigits,
-      message: cleanMessage,
-      sender: cleanSender,
-      mock: process.env.MOCK_ITEXMO === 'true',
+  const apiRecipient = phoneDigits.startsWith('+')
+    ? phoneDigits
+    : phoneDigits.startsWith('0')
+      ? `+63${phoneDigits.slice(1)}`
+      : `+${phoneDigits}`;
+  const request = {
+    recipient: apiRecipient,
+    content: cleanMessage,
+    sender_id: cleanSender,
+  };
+
+  if (process.env.MOCK_UNISMS === 'true' || !target) {
+    return res.json({
+      ok: true,
+      mock: true,
+      message: 'Dry run complete. No SMS was sent.',
+      request: { ...request, apiKey: '[hidden]' },
+      testedAt: new Date().toISOString(),
     });
-    return res.status(result.ok ? 200 : 502).json(result);
+  }
+
+  if (!apiKey) {
+    return res.status(500).json({ ok: false, error: 'UNISMS_API_KEY is not configured on the server.' });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(target, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`,
+      },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const text = await response.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 2000) }; }
+    return res.status(response.ok ? 200 : 502).json({
+      ok: response.ok,
+      status: response.status,
+      response: data,
+      message: response.ok ? 'Unisms accepted the request.' : 'Unisms rejected the request.',
+    });
   } catch (error) {
-    const message = error.name === 'AbortError' ? 'iTexMo request timed out.' : 'Could not reach the iTexMo API.';
+    const message = error.name === 'AbortError' ? 'Unisms request timed out.' : 'Could not reach the Unisms endpoint.';
     return res.status(502).json({ ok: false, error: message });
   }
 });
