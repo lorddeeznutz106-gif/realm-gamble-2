@@ -9,14 +9,14 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="/">UNISMS <span>SIGNAL DESK</span></a>
+      <a class="brand" href="/">ITEXMO <span>SMS DESK</span></a>
       <div class="status"><i></i><span id="mode-label">READY TO TEST</span></div>
     </header>
 
     <section class="intro">
       <p class="eyebrow">SMS DELIVERY CONSOLE / 01</p>
       <h1>Send a clean test.<br><em>Read the signal.</em></h1>
-      <p class="lede">A focused workspace for checking your Unisms connection across Philippine mobile networks.</p>
+      <p class="lede">A focused workspace for testing iTexMo SMS delivery across Philippine mobile networks.</p>
     </section>
 
     <section class="workspace">
@@ -32,8 +32,8 @@
           <label>Recipient number
             <input id="recipient" name="recipient" type="tel" placeholder="09XX XXX XXXX" autocomplete="tel" required>
           </label>
-          <label>Sender ID
-            <input id="sender" name="sender" type="text" value="UniSMS" placeholder="Your approved sender ID" maxlength="20" required>
+          <label>Sender ID <span class="optional">optional</span>
+            <input id="sender" name="sender" type="text" placeholder="Your registered sender ID" maxlength="20">
           </label>
         </div>
         <label>Message <span id="counter" class="counter">0 / 480</span>
@@ -47,7 +47,7 @@
         <div class="config-panel">
           <div class="panel-heading"><span>02</span><h2>Connection</h2></div>
           <div class="server-status"><i></i><strong>Server connection</strong><span>Credentials configured privately</span></div>
-          <div class="hint"><b>Need a dry run?</b><br>Set <code>MOCK_UNISMS=true</code> on the server. The request will be validated but no SMS will be sent.</div>
+          <div class="hint"><b>Need a dry run?</b><br>Set <code>MOCK_ITEXMO=true</code> on the server. The request will be validated but no SMS will be sent.</div>
         </div>
         <div id="result-panel" class="result-panel idle">
           <div class="panel-heading"><span>03</span><h2>Last result</h2></div>
@@ -56,7 +56,7 @@
       </aside>
     </section>
     <section class="history-section"><div class="history-title"><h2>Recent checks</h2><button id="clear-history" type="button">Clear</button></div><div id="history" class="history-empty">No checks yet.</div></section>
-    <footer>UNISMS SIGNAL DESK <span>LOCAL API TOOL</span></footer>
+    <footer>ITEXMO SMS DESK <span>LOCAL API TOOL</span></footer>
   </main>
   <script src="/js/unisms-tester.js"></script>
 </body>

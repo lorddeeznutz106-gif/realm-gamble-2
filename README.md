@@ -1,6 +1,6 @@
-# Unisms Signal Desk
+# iTexMo SMS Desk
 
-A small browser tool for testing Unisms SMS requests for TNT and Smart numbers. The original Realm Gamble game files remain in the repository, but the default page is now the SMS tester.
+A small browser tool for testing iTexMo SMS requests for TNT and Smart numbers. The original Realm Gamble game files remain in the repository, but the default page is now the SMS tester.
 
 ## Local Development
 
@@ -9,24 +9,26 @@ npm install
 npm start
 ```
 
-Open http://localhost:3000. The tester sends requests through `POST /api/unisms/test`, so the API key is not exposed to a third-party browser request.
+Open http://localhost:3000. The tester sends requests through `POST /api/unisms/test`, so credentials are never exposed to a third-party browser request.
 
 ## Configuration
 
-Configure the endpoint and API key on the server. They are never entered or stored in the browser:
+Configure iTexMo credentials on the server. They are never entered or stored in the browser:
 
 ```powershell
-$env:UNISMS_API_URL = 'https://unismsapi.com/api/sms'
-$env:UNISMS_API_KEY = 'your-unisms-api-key'
+$env:ITEXMO_API_CODE = 'your-api-code'
+$env:ITEXMO_CLIENT_ID = 'your-client-id'
+$env:ITEXMO_EMAIL = 'your-email@example.com'
+$env:ITEXMO_PASSWORD = 'your-password'
 npm start
 ```
 
-The live request uses UniSMS Basic Authentication and sends `recipient`, `content`, and `sender_id`. Use an approved sender ID from your UniSMS account. Phone numbers are normalized to E.164 format for the API.
+The live request sends credentials and SMS details to iTexMo's broadcast endpoint.
 
 For validation without sending an SMS:
 
 ```powershell
-$env:MOCK_UNISMS = 'true'
+$env:MOCK_ITEXMO = 'true'
 npm start
 ```
 
@@ -40,4 +42,4 @@ The mock response confirms input validation and returns the sanitized request.
 4. Railway auto-detects Node.js — no extra config needed
 5. Once deployed, open the generated URL and share it with friends!
 
-Railway sets `PORT` automatically. Set `UNISMS_API_URL` as a Railway variable for live tests, or `MOCK_UNISMS=true` for a no-send deployment.
+Railway sets `PORT` automatically. Set `ITEXMO_API_CODE`, `ITEXMO_CLIENT_ID`, `ITEXMO_EMAIL`, and `ITEXMO_PASSWORD` as Railway variables for live tests, or `MOCK_ITEXMO=true` for a no-send deployment.
